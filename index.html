@@ -1,1 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Assist Copilot</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            margin: 0;
+        }
+        .scanner-section {
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #ccc;
+            text-align: center;
+        }
+        #qr-reader {
+            width: 500px;
+            margin: auto;
+            border: 1px solid #ccc;
+        }
+        .copilot-section {
+            flex-grow: 1; /* Allows the iframe to fill remaining space */
+        }
+        iframe { 
+            border: none; 
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scanner-section">
+        <button id="start-scan-btn">Scan Equipment QR Code</button>
+        <div id="qr-reader" style="display: none;"></div>
+        <h3>Scanned Result: <span id="scanned-result"></span></h3>
+    </div>
+
+    <div class="copilot-section">
+        <iframe id="copilot-iframe" src="https://copilotstudio.microsoft.com/environments/5d328100-505d-e5c7-9dd9-45b818f1b5f1/bots/cr72e_aiManualAssistCopilot_Nmq8jI/webchat?__version__=2"></iframe>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    
+    <script>
+        const startScanButton = document.getElementById('start-scan-btn');
+        const qrReaderDiv = document.getElementById('qr-reader');
+        const resultSpan = document.getElementById('scanned-result');
+        const copilotIframe = document.getElementById('copilot-iframe');
+        let html5QrcodeScanner;
+
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log(`Scan result: ${decodedText}`);
+            
+            // Display the result on the page for the user to see.
+            resultSpan.innerHTML = decodedText;
+
+            // --- THIS IS THE UPDATED CODE ---
+            // This waits for 1 second (1000ms) before sending the message to give the copilot time to load.
+            const messageToSend = "search by equipment number " + decodedText;
+            setTimeout(function() {
+                copilotIframe.contentWindow.postMessage({
+                    type: 'message',
+                    text: messageToSend
+                }, '*');
+            }, 1000);
+            
+            // Stop the scanner and hide the viewfinder.
+            html5QrcodeScanner.clear();
+            qrReaderDiv.style.display = 'none';
+        }
+
+        function onScanError(errorMessage) {
+            // handle scan error, you can ignore this.
+        }
+
+        startScanButton.addEventListener('click', () => {
+            qrReaderDiv.style.display = 'block';
+            
+            if (!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5QrcodeScanner(
+                    "qr-reader", // The ID of the div to render the scanner in.
+                    { fps: 10, qrbox: { width: 250, height: 250 } } // Scanner configuration.
+                );
+            }
+            
+            // Start scanning.
+            html5QrcodeScanner.render(onScanSuccess, onScanError);
+        });
+
+    </script>
+
+</body>
+</html>
 
