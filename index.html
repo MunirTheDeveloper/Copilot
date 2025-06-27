@@ -24,7 +24,7 @@
             border: 1px solid #ccc;
         }
         .copilot-section {
-            flex-grow: 1; 
+            flex-grow: 1; /* Allows the iframe to fill remaining space */
         }
         iframe { 
             border: none; 
@@ -51,33 +51,25 @@
         const startScanButton = document.getElementById('start-scan-btn');
         const qrReaderDiv = document.getElementById('qr-reader');
         const resultSpan = document.getElementById('scanned-result');
-        const copilotIframe = document.getElementById('copilot-iframe');
         let html5QrcodeScanner;
-        
-        // --- NEW, MORE RELIABLE LOGIC ---
 
-        // This function will be called when the scanner is successful
+        // --- THIS IS THE FINAL, UPDATED FUNCTION ---
         function onScanSuccess(decodedText, decodedResult) {
             console.log(`Scan result: ${decodedText}`);
-            resultSpan.innerHTML = decodedText; // Show result on page
-
-            // Construct the message to send to the bot
-            const messageToSend = "search by equipment number " + decodedText;
             
-            // Create the specific activity object that Copilot Studio expects
-            const activity = {
-                from: { id: 'user', name: 'User', role: 'user' },
-                type: 'message',
-                text: messageToSend
-            };
+            // Display the result on the page for the user to see.
+            resultSpan.innerHTML = decodedText;
 
-            // Send the activity to the iframe
-            copilotIframe.contentWindow.postMessage({
-                type: 'POST_ACTIVITY',
-                payload: { activity: activity }
-            }, 'https://copilotstudio.microsoft.com'); // Use the correct target origin for security
+            // This new logic copies the scanned text to the clipboard.
+            navigator.clipboard.writeText(decodedText).then(function() {
+                // Show a success message to the user.
+                alert("Equipment number " + decodedText + " has been copied to your clipboard!");
+            }, function(err) {
+                // Show an error message if the copy fails.
+                alert('Could not copy text: ', err);
+            });
             
-            // Stop and hide the scanner
+            // Stop the scanner and hide the viewfinder.
             html5QrcodeScanner.clear().catch(error => {
                 console.error("Failed to clear html5QrcodeScanner.", error);
             });
@@ -85,7 +77,7 @@
         }
 
         function onScanError(errorMessage) {
-            // handle scan error, usually we can ignore this.
+            // handle scan error, you can ignore this.
         }
 
         // This function runs when the user clicks the scan button
@@ -94,11 +86,12 @@
             
             if (!html5QrcodeScanner) {
                 html5QrcodeScanner = new Html5QrcodeScanner(
-                    "qr-reader", 
-                    { fps: 10, qrbox: { width: 250, height: 250 } }
+                    "qr-reader", // The ID of the div to render the scanner in.
+                    { fps: 10, qrbox: { width: 250, height: 250 } } // Scanner configuration.
                 );
             }
             
+            // Start scanning.
             html5QrcodeScanner.render(onScanSuccess, onScanError);
         });
 
