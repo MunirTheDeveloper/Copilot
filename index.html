@@ -24,7 +24,7 @@
             border: 1px solid #ccc;
         }
         .copilot-section {
-            flex-grow: 1; 
+            flex-grow: 1; /* Allows the iframe to fill remaining space */
         }
         iframe { 
             border: none; 
@@ -51,11 +51,7 @@
         const startScanButton = document.getElementById('start-scan-btn');
         const qrReaderDiv = document.getElementById('qr-reader');
         const resultSpan = document.getElementById('scanned-result');
-        
-        // --- THIS IS THE NEW PART ---
-        // Get a reference to the copilot iframe
         const copilotIframe = document.getElementById('copilot-iframe');
-
         let html5QrcodeScanner;
 
         function onScanSuccess(decodedText, decodedResult) {
@@ -64,13 +60,15 @@
             // Display the result on the page for the user to see.
             resultSpan.innerHTML = decodedText;
 
-            // --- THIS IS THE NEW PART ---
-            // Automatically send a message to the copilot with the scanned number.
+            // --- THIS IS THE UPDATED CODE ---
+            // This waits for 1 second (1000ms) before sending the message to give the copilot time to load.
             const messageToSend = "search by equipment number " + decodedText;
-            copilotIframe.contentWindow.postMessage({
-                type: 'message',
-                text: messageToSend
-            }, '*'); // Sending the message to the iframe
+            setTimeout(function() {
+                copilotIframe.contentWindow.postMessage({
+                    type: 'message',
+                    text: messageToSend
+                }, '*');
+            }, 1000);
             
             // Stop the scanner and hide the viewfinder.
             html5QrcodeScanner.clear();
@@ -86,11 +84,12 @@
             
             if (!html5QrcodeScanner) {
                 html5QrcodeScanner = new Html5QrcodeScanner(
-                    "qr-reader", 
-                    { fps: 10, qrbox: { width: 250, height: 250 } }
+                    "qr-reader", // The ID of the div to render the scanner in.
+                    { fps: 10, qrbox: { width: 250, height: 250 } } // Scanner configuration.
                 );
             }
             
+            // Start scanning.
             html5QrcodeScanner.render(onScanSuccess, onScanError);
         });
 
