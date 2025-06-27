@@ -24,7 +24,7 @@
             border: 1px solid #ccc;
         }
         .copilot-section {
-            flex-grow: 1; /* Allows the iframe to fill remaining space */
+            flex-grow: 1; 
         }
         iframe { 
             border: none; 
@@ -53,43 +53,52 @@
         const resultSpan = document.getElementById('scanned-result');
         const copilotIframe = document.getElementById('copilot-iframe');
         let html5QrcodeScanner;
+        
+        // --- NEW, MORE RELIABLE LOGIC ---
 
+        // This function will be called when the scanner is successful
         function onScanSuccess(decodedText, decodedResult) {
             console.log(`Scan result: ${decodedText}`);
-            
-            // Display the result on the page for the user to see.
-            resultSpan.innerHTML = decodedText;
+            resultSpan.innerHTML = decodedText; // Show result on page
 
-            // --- THIS IS THE UPDATED CODE ---
-            // This waits for 1 second (1000ms) before sending the message to give the copilot time to load.
+            // Construct the message to send to the bot
             const messageToSend = "search by equipment number " + decodedText;
-            setTimeout(function() {
-                copilotIframe.contentWindow.postMessage({
-                    type: 'message',
-                    text: messageToSend
-                }, '*');
-            }, 1000);
             
-            // Stop the scanner and hide the viewfinder.
-            html5QrcodeScanner.clear();
+            // Create the specific activity object that Copilot Studio expects
+            const activity = {
+                from: { id: 'user', name: 'User', role: 'user' },
+                type: 'message',
+                text: messageToSend
+            };
+
+            // Send the activity to the iframe
+            copilotIframe.contentWindow.postMessage({
+                type: 'POST_ACTIVITY',
+                payload: { activity: activity }
+            }, 'https://copilotstudio.microsoft.com'); // Use the correct target origin for security
+            
+            // Stop and hide the scanner
+            html5QrcodeScanner.clear().catch(error => {
+                console.error("Failed to clear html5QrcodeScanner.", error);
+            });
             qrReaderDiv.style.display = 'none';
         }
 
         function onScanError(errorMessage) {
-            // handle scan error, you can ignore this.
+            // handle scan error, usually we can ignore this.
         }
 
+        // This function runs when the user clicks the scan button
         startScanButton.addEventListener('click', () => {
             qrReaderDiv.style.display = 'block';
             
             if (!html5QrcodeScanner) {
                 html5QrcodeScanner = new Html5QrcodeScanner(
-                    "qr-reader", // The ID of the div to render the scanner in.
-                    { fps: 10, qrbox: { width: 250, height: 250 } } // Scanner configuration.
+                    "qr-reader", 
+                    { fps: 10, qrbox: { width: 250, height: 250 } }
                 );
             }
             
-            // Start scanning.
             html5QrcodeScanner.render(onScanSuccess, onScanError);
         });
 
@@ -97,4 +106,3 @@
 
 </body>
 </html>
-
