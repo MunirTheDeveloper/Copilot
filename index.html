@@ -24,7 +24,7 @@
             border: 1px solid #ccc;
         }
         .copilot-section {
-            flex-grow: 1; /* Allows the iframe to fill remaining space */
+            flex-grow: 1; 
         }
         iframe { 
             border: none; 
@@ -42,7 +42,7 @@
     </div>
 
     <div class="copilot-section">
-        <iframe src="https://copilotstudio.microsoft.com/environments/5d328100-505d-e5c7-9dd9-45b818f1b5f1/bots/cr72e_aiManualAssistCopilot_Nmq8jI/webchat?__version__=2"></iframe>
+        <iframe id="copilot-iframe" src="https://copilotstudio.microsoft.com/environments/5d328100-505d-e5c7-9dd9-45b818f1b5f1/bots/cr72e_aiManualAssistCopilot_Nmq8jI/webchat?__version__=2"></iframe>
     </div>
 
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -51,37 +51,46 @@
         const startScanButton = document.getElementById('start-scan-btn');
         const qrReaderDiv = document.getElementById('qr-reader');
         const resultSpan = document.getElementById('scanned-result');
+        
+        // --- THIS IS THE NEW PART ---
+        // Get a reference to the copilot iframe
+        const copilotIframe = document.getElementById('copilot-iframe');
+
         let html5QrcodeScanner;
 
         function onScanSuccess(decodedText, decodedResult) {
-            // This function runs when a QR code is successfully scanned.
             console.log(`Scan result: ${decodedText}`);
             
-            // Display the result on the page.
+            // Display the result on the page for the user to see.
             resultSpan.innerHTML = decodedText;
 
+            // --- THIS IS THE NEW PART ---
+            // Automatically send a message to the copilot with the scanned number.
+            const messageToSend = "search by equipment number " + decodedText;
+            copilotIframe.contentWindow.postMessage({
+                type: 'message',
+                text: messageToSend
+            }, '*'); // Sending the message to the iframe
+            
             // Stop the scanner and hide the viewfinder.
             html5QrcodeScanner.clear();
             qrReaderDiv.style.display = 'none';
         }
 
         function onScanError(errorMessage) {
-            // handle scan error, usually you can ignore this.
+            // handle scan error, you can ignore this.
         }
 
         startScanButton.addEventListener('click', () => {
-            // Show the scanner viewfinder.
             qrReaderDiv.style.display = 'block';
             
-            // If scanner doesn't exist, create it.
             if (!html5QrcodeScanner) {
                 html5QrcodeScanner = new Html5QrcodeScanner(
-                    "qr-reader", // The ID of the div to render the scanner in.
-                    { fps: 10, qrbox: { width: 250, height: 250 } } // Scanner configuration.
+                    "qr-reader", 
+                    { fps: 10, qrbox: { width: 250, height: 250 } }
                 );
             }
             
-            // Start scanning.
             html5QrcodeScanner.render(onScanSuccess, onScanError);
         });
 
